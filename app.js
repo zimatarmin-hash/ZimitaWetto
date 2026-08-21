@@ -666,26 +666,6 @@ function renderProviderCardsInto(containerId, providers) {
 }
 function renderProviderCards() { renderProviderCardsInto('providerCards', PROVIDERS); }
 
-// Flugwetter-Spezialdienste (Segelflug/Gleitschirm): SkySight & TopMeteo sind
-// kostenpflichtige Abos ohne öffentliche API – bewusst nur als Link, keine
-// erfundenen Vergleichswerte. Siehe Windprofil (Live-Radar-Tab) für eine
-// kostenlose Alternative zu Meteoblues Aerological-Paket.
-const FLIGHT_WEATHER_PROVIDERS = [
-  {
-    id: 'skysight', name: 'SkySight', letter: 'SK', color: '#7c3fc4',
-    url: 'https://skysight.io',
-    desc: 'Segelflug-/Gleitschirmwetter (Thermik, Wind, Wellen, Vertikalprofile). Ab ca. 89€/Jahr – keine öffentliche API.',
-    embeddable: false,
-  },
-  {
-    id: 'topmeteo', name: 'TopMeteo', letter: 'TM', color: '#c4763f',
-    url: 'https://www.topmeteo.eu',
-    desc: 'Flugwetter für Segelflug, Gleitschirm, Ballon (Thermikkarten, Windprofile 1-kt-Auflösung). Kostenpflichtiges Abo – keine öffentliche API.',
-    embeddable: false,
-  },
-];
-function renderFlightWeatherCards() { renderProviderCardsInto('flightWeatherCards', FLIGHT_WEATHER_PROVIDERS); }
-
 // ==========================================================================
 // RENDER – Details (Chart, Astronomie, Standort)
 // ==========================================================================
@@ -1518,7 +1498,6 @@ document.addEventListener('DOMContentLoaded', () => {
   initLocationPicker();
   renderQuickLinks();
   renderProviderCards();
-  renderFlightWeatherCards();
 
   loadMunicipalities().catch(() => showToast('Liste der Südtiroler Gemeinden nicht verfügbar – Ortssuche findet ggf. keine Gemeindezuordnung.'));
   loadAll();
