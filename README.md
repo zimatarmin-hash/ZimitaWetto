@@ -17,12 +17,22 @@ server.ps1    Mini-HTTP-Server für den lokalen Test (nur PowerShell nötig)
 ## Position vs. Daten
 
 Die Landeswetterdienst-Daten liegen technisch nur je **Gemeinde** vor (kein
-Weiler-Raster) – sie gelten daher für **Kiens**. Wo eine genaue Koordinate
-möglich ist (Open-Meteo, Kartenmittelpunkt/Marker, Standort-Anzeige), verwendet
-die App die Position von **Zimat** (46.81423° N, 11.80156° E – die einzige mit
-diesem Namen in OpenStreetMap verzeichnete Stelle bei St. Sigmund; ohne
-eigenen Hoheitsstatus, daher nur eine Näherung, keine amtlich vermessene
-Weiler-Mitte).
+Weiler-Raster) – sie gelten daher standardmäßig für **Kiens**. Wo eine genaue
+Koordinate möglich ist (Open-Meteo, Kartenmittelpunkt/Marker, Standort-Anzeige),
+verwendet die App standardmäßig die Position von **Zimat** (46.81423° N,
+11.80156° E – die einzige mit diesem Namen in OpenStreetMap verzeichnete Stelle
+bei St. Sigmund; ohne eigenen Hoheitsstatus, daher nur eine Näherung, keine
+amtlich vermessene Weiler-Mitte).
+
+### Ortssuche (Kopfbereich antippen)
+
+Ein Tap auf den Ortsnamen im Kopfbereich öffnet eine Suche über ganz Südtirol
+(Nominatim/OpenStreetMap, auf die Landesgrenze eingegrenzt). Aus dem Suchtreffer
+wird per Namensabgleich gegen die 116 Gemeinden (`static-data/municipalities.json`)
+die zugehörige Landeswetterdienst-Gemeinde ermittelt – Position, Karte und
+Gemeindedaten stellen sich dann automatisch um. Kachelmannwetter bleibt technisch
+bedingt (feste `city_id`) immer auf Kiens bezogen. Die Auswahl wird **nicht**
+gespeichert – nach einem Neuladen der Seite gilt wieder Zimat als Standard.
 
 ## Datenquellen – was wirklich live ist
 
@@ -79,6 +89,15 @@ verlässliche Basis für eine Produktions-App. Bergfex ist deshalb komplett entf
 Eine dritte "bewährte" öffentliche Zusatzquelle speziell für Südtirol über
 Landeswetterdienst und Open-Meteo hinaus ist uns nicht bekannt – beide sind
 bereits die verlässlichsten frei verfügbaren Optionen.
+
+## Radar-Tab: kompakte Vollbild-Ansicht
+
+Im Radar-Tab wird der Kopfbereich ausgeblendet und Ebenen-Auswahl, Karte und
+Zeitleiste als Flex-Layout auf die verfügbare Bildschirmhöhe verteilt (Karte
+bekommt den meisten Platz), damit auf einem typischen Smartphone-Screen alles
+gleichzeitig sichtbar ist, ohne zu scrollen. Die Legende ist standardmäßig
+eingeklappt und lässt sich über das kleine Icon oben rechts auf der Karte als
+schwebendes Panel einblenden, ohne die Kartenhöhe zu verändern.
 
 ## Lokal testen
 

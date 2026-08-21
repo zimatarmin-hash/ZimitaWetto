@@ -31,14 +31,35 @@
 <header class="app-header">
   <div class="app-header__title">
     <span class="app-header__icon" id="headerIcon"></span>
-    <div>
-      <span class="app-header__brand">Zimita Wetto</span>
-      <h1>Zimat</h1>
-      <p class="app-header__subtitle">Fraktion von Kiens · Südtirol · <span id="headerUpdated">wird geladen…</span></p>
-    </div>
+    <button class="header-location-btn" id="locationTrigger" aria-haspopup="dialog" title="Ort wechseln">
+      <span class="header-location-btn__text">
+        <span class="app-header__brand">Zimita Wetto</span>
+        <h1 id="headerPositionName">Zimat</h1>
+        <p class="app-header__subtitle"><span id="headerLocationSub">Fraktion von Kiens · Südtirol</span> · <span id="headerUpdated">wird geladen…</span></p>
+      </span>
+      <span class="header-location-btn__chevron" data-icon="chevron" data-icon-size="sm"></span>
+    </button>
   </div>
   <button class="icon-btn" id="themeToggle" aria-label="Darstellung umschalten" title="Hell/Dunkel umschalten"></button>
 </header>
+
+<div class="location-sheet" id="locationSheet" hidden>
+  <div class="location-sheet__backdrop" id="locationSheetBackdrop"></div>
+  <div class="location-sheet__panel" role="dialog" aria-modal="true" aria-label="Ort wählen">
+    <div class="location-sheet__handle"></div>
+    <div class="location-sheet__searchrow">
+      <span class="location-sheet__searchicon" data-icon="search" data-icon-size="sm"></span>
+      <input type="search" id="locationSearchInput" class="location-sheet__input" placeholder="Fraktion oder Ort in Südtirol suchen…" autocomplete="off">
+      <button class="icon-btn location-sheet__close" id="locationSheetClose" aria-label="Schließen" data-icon="close" data-icon-size="sm"></button>
+    </div>
+    <div class="location-results" id="locationResults">
+      <button class="location-result location-result--default" id="locationDefaultBtn">
+        <span class="location-result__icon" data-icon="pin" data-icon-size="sm"></span>
+        <span class="location-result__body"><span class="location-result__name">Zimat</span><span class="location-result__sub">Standard · Fraktion von Kiens</span></span>
+      </button>
+    </div>
+  </div>
+</div>
 
 <main id="app">
 
@@ -56,7 +77,7 @@
         <div class="stat"><span class="stat__label">Wind</span><span class="stat__value" id="statusWind">-- km/h</span></div>
         <div class="stat"><span class="stat__label">Min / Max</span><span class="stat__value" id="statusMinMax">--° / --°</span></div>
       </div>
-      <p class="status-card__note">Schnitt aus <span id="statusSourceCount">3</span> Quellen: Landeswetterdienst (Kiens), Open-Meteo (Zimat), Kachelmannwetter · <button class="link-btn" id="aggInfoBtn">Details</button></p>
+      <p class="status-card__note">Schnitt aus <span id="statusSourceCount">3</span> Quellen: Landeswetterdienst (<span class="js-loc-municipality">Kiens</span>), Open-Meteo (<span class="js-loc-position">Zimat</span>), Kachelmannwetter · <button class="link-btn" id="aggInfoBtn">Details</button></p>
     </div>
 
     <h2 class="section-title">Nächste Stunden</h2>
@@ -94,7 +115,7 @@
             <tr>
               <th>Tag</th>
               <th>Südtirolwetter<br><small>Landeswetterdienst</small></th>
-              <th>Open-Meteo<br><small>Zimat</small></th>
+              <th>Open-Meteo<br><small class="js-loc-position">Zimat</small></th>
               <th>Kachelmann<br><small>live gelesen</small></th>
             </tr>
           </thead>
@@ -126,6 +147,7 @@
 
     <div class="card map-card">
       <div id="map"></div>
+      <button class="map-legend-toggle" id="legendToggle" aria-label="Legende ein-/ausblenden" data-icon="legend" data-icon-size="sm"></button>
       <div class="map-legend" id="mapLegend"></div>
     </div>
 
@@ -167,7 +189,7 @@
       <p><strong>Ausgangszustand:</strong> War es in den letzten 2 Tagen trocken (&lt;1mm), reichen 3 aufeinanderfolgende Trockentage. War es nass (≥1mm), werden 4 Tage benötigt (1 Tag Bodenabtrocknung + 3 Tage Trocknung).</p>
       <p><strong>Trockentag:</strong> Niederschlag &lt;0,2mm, Regenwahrscheinlichkeit &lt;15% (Konsens Landeswetterdienst + Open-Meteo) und Sonnenstunden ≥7h.</p>
       <p><strong>Abtrocknung 11–17 Uhr:</strong> Optimal bei rel. Luftfeuchte &lt;50% oder Taupunktdifferenz &gt;10°C; kritisch bei Luftfeuchte &gt;65% oder Taupunktdifferenz &lt;5°C. War die Morgenfeuchte &gt;90% (starker Tau), wird die Einstufung um eine Stufe verschlechtert (entspricht ca. 2h weniger Trocknungszeit).</p>
-      <p>Datengrundlage: Landeswetterdienst Südtirol (Kiens) &amp; Open-Meteo (Zimat, inkl. Taupunkt/Luftfeuchte/Wind). Kachelmann fließt wegen begrenzter Datentiefe nicht in die Berechnung ein.</p>
+      <p>Datengrundlage: Landeswetterdienst Südtirol (<span class="js-loc-municipality">Kiens</span>) &amp; Open-Meteo (<span class="js-loc-position">Zimat</span>, inkl. Taupunkt/Luftfeuchte/Wind). Kachelmann fließt wegen begrenzter Datentiefe nicht in die Berechnung ein.</p>
     </div>
 
   </section>
@@ -192,9 +214,10 @@
 
     <h2 class="section-title">Über diese App</h2>
     <div class="card about-card">
-      <p><strong>Zimita Wetto</strong> bündelt öffentliche Wetterdaten des Landes Südtirol (Wetterdienst &amp; Zivilschutz, Gemeinde Kiens), Open-Meteo (Position Zimat) und Kachelmannwetter zu einem gemeinsamen Schnitt. Kachelmannwetter stellt keine offizielle API bereit – die Werte werden live von der Webseite über einen Lese-Proxy (r.jina.ai) extrahiert und können daher gelegentlich kurzfristig fehlen. Bergfex wurde entfernt, da die Seite automatisierte Anfragen aktiv blockiert (HTTP 429).</p>
+      <p><strong>Zimita Wetto</strong> bündelt öffentliche Wetterdaten des Landes Südtirol (Wetterdienst &amp; Zivilschutz, Gemeinde <span class="js-loc-municipality">Kiens</span>), Open-Meteo (Position <span class="js-loc-position">Zimat</span>) und Kachelmannwetter zu einem gemeinsamen Schnitt. Kachelmannwetter stellt keine offizielle API bereit – die Werte werden live von der Webseite über einen Lese-Proxy (r.jina.ai) extrahiert und können daher gelegentlich kurzfristig fehlen. Bergfex wurde entfernt, da die Seite automatisierte Anfragen aktiv blockiert (HTTP 429).</p>
+      <p>Über den Ort-Umschalter oben im Kopfbereich lässt sich jede Fraktion bzw. jeder Ort Südtirols suchen; Position, Karte und (falls zuordenbar) die Landeswetterdienst-Gemeinde stellen sich dann automatisch um. Kachelmannwetter bleibt dabei technisch bedingt immer auf Kiens bezogen. Beim Neuladen der Seite gilt wieder <span class="js-loc-position">Zimat</span> als Standard.</p>
       <p>Die Live-Radar-Zeitleiste (bis 3h zurück) und die amtliche Niederschlagsvorhersage (bis ca. 24h voraus) stammen von den Rasterbildern der Provinz Südtirol mit exakter Georeferenzierung (EPSG:25832 → WGS84 via proj4js).</p>
-      <p>Die Positionsanzeige (Karte, Open-Meteo) bezieht sich auf Zimat. Die amtlichen Landeswetterdienst-Daten liegen nur auf Gemeindeebene vor und gelten daher für Kiens.</p>
+      <p>Die Positionsanzeige (Karte, Open-Meteo) bezieht sich auf <span class="js-loc-position">Zimat</span>. Die amtlichen Landeswetterdienst-Daten liegen nur auf Gemeindeebene vor und gelten daher für <span class="js-loc-municipality">Kiens</span>.</p>
       <p class="about-card__meta">Letzte Aktualisierung: <span id="aboutUpdated">--</span></p>
     </div>
 

@@ -23,19 +23,26 @@
    ========================================================================== */
 
 const CONFIG = {
-  kiens: {
+  // Aktuell gewählte Gemeinde für die Landeswetterdienst-Daten (Bulletins
+  // liegen nur je Gemeinde vor, nicht je Fraktion). Wird über die
+  // Ortssuche im Kopfbereich umgestellt, sofern die gesuchte Fraktion einer
+  // der 116 Südtiroler Gemeinden zugeordnet werden kann.
+  municipality: {
     uuid: '9a239c35-f405-46ab-ba5d-aeffd2b8af0b',
-    baseBulletinId: 144000000,
+    name_de: 'Kiens',
+    url_slug_de: 'kiens',
   },
-  // Zimat: Weiler bei St. Sigmund, Gemeinde Kiens. Bestimmt Kartenmitte,
-  // Marker und die Open-Meteo-Abfrage (punktgenau, im Unterschied zu den
-  // Landeswetterdienst-Daten, die nur je Gemeinde vorliegen).
+  baseBulletinId: 144000000,
+  // Feinposition (Fraktion/Ort) für Open-Meteo & Kartenmittelpunkt – punktgenau,
+  // im Unterschied zu den Landeswetterdienst-Daten, die nur je Gemeinde vorliegen.
+  // Standard ist immer Zimat (Weiler bei St. Sigmund, Gemeinde Kiens).
   position: {
     name: 'Zimat',
     sub: 'Fraktion von Kiens',
     lat: 46.81423,
     lon: 11.80156,
   },
+  southTyrolViewbox: '10.35,47.15,12.55,46.15',
   providerBase: 'https://static-wetter.provinz.bz.it/forecast-data/website',
   meteoBase: 'https://static-meteo.provincia.bz.it/raster-data/website',
   openMeteo: 'https://api.open-meteo.com/v1/forecast',
@@ -52,17 +59,23 @@ proj4.defs('EPSG:25832', '+proj=utm +zone=32 +ellps=GRS80 +towgs84=0,0,0,0,0,0,0
 const PROVIDERS = [
   {
     id: 'suedtirol', name: 'Südtirolwetter', letter: 'S', color: '#0e7c9c',
-    url: 'https://wetter.provinz.bz.it/de/gemeindewetter/kiens?tl=144000000',
-    desc: 'Amtlicher Landeswetterdienst – offene API, direkte Datenquelle dieser App (Gemeinde Kiens).',
+    url: '', desc: '',
     embeddable: false,
   },
   {
     id: 'kachelmann', name: 'Kachelmannwetter', letter: 'K', color: '#1f9d55',
     url: 'https://kachelmannwetter.com/de/wetter/3178820-kiens',
-    desc: '14-Tage-Trend. Keine offizielle API – Stunden-/Tageswerte werden live gelesen.',
+    desc: '14-Tage-Trend. Keine offizielle API – Stunden-/Tageswerte werden live gelesen. Technisch bedingt immer auf Kiens bezogen.',
     embeddable: true,
   },
 ];
+// Aktualisiert den Südtirolwetter-Link/-Text anhand der aktuell gewählten
+// Gemeinde (PROVIDERS[0]) – ihr URL-Slug funktioniert für alle 116 Gemeinden.
+function buildProviders() {
+  PROVIDERS[0].url = `https://wetter.provinz.bz.it/de/gemeindewetter/${CONFIG.municipality.url_slug_de}?tl=${CONFIG.baseBulletinId}`;
+  PROVIDERS[0].desc = `Amtlicher Landeswetterdienst – offene API, direkte Datenquelle dieser App (Gemeinde ${CONFIG.municipality.name_de}).`;
+}
+buildProviders();
 
 const RADAR_SOURCE_LINKS = [
   { name: 'Live-Radar, Blitze & Satellit – Original', url: 'https://wetter.provinz.bz.it/de/radar-blitze-und-satellit' },
@@ -235,6 +248,9 @@ const UI_ICON = {
   moonset: moonShape(12, 10, 4.6) + `<line x1="2.5" y1="17" x2="21.5" y2="17" stroke="currentColor" stroke-width="1.6" stroke-linecap="round"/>`,
   pin: `<path d="M12 21 C8 16.5 5.5 13 5.5 9.2 a6.5 6.5 0 0 1 13 0 C18.5 13 16 16.5 12 21 Z" fill="none" stroke="currentColor" stroke-width="1.7"/><circle cx="12" cy="9.2" r="2.4" fill="currentColor"/>`,
   ruler: `<rect x="3" y="9" width="18" height="6" rx="1.5" fill="none" stroke="currentColor" stroke-width="1.6"/><line x1="7" y1="9" x2="7" y2="12" stroke="currentColor" stroke-width="1.4"/><line x1="11" y1="9" x2="11" y2="12" stroke="currentColor" stroke-width="1.4"/><line x1="15" y1="9" x2="15" y2="12" stroke="currentColor" stroke-width="1.4"/><line x1="19" y1="9" x2="19" y2="12" stroke="currentColor" stroke-width="1.4"/>`,
+  legend: `<rect x="4" y="6" width="16" height="3" rx="1.5" fill="currentColor" opacity="0.9"/><rect x="4" y="11" width="16" height="3" rx="1.5" fill="currentColor" opacity="0.6"/><rect x="4" y="16" width="16" height="3" rx="1.5" fill="currentColor" opacity="0.35"/>`,
+  search: `<circle cx="10.5" cy="10.5" r="6.5" fill="none" stroke="currentColor" stroke-width="1.8"/><line x1="15.3" y1="15.3" x2="20.5" y2="20.5" stroke="currentColor" stroke-width="1.8" stroke-linecap="round"/>`,
+  close: `<line x1="6" y1="6" x2="18" y2="18" stroke="currentColor" stroke-width="2" stroke-linecap="round"/><line x1="18" y1="6" x2="6" y2="18" stroke="currentColor" stroke-width="2" stroke-linecap="round"/>`,
 };
 function uiIcon(name, size = 'md') { return svgWrap(UI_ICON[name] || '', `wicon--${size}`); }
 function initStaticIcons() {
@@ -332,17 +348,23 @@ function zonedTimeToUtcMs(y, mo, d, h, mi, s, timeZone) {
 const STATE = {
   hourly: [],      // Landeswetterdienst: [{time, temp, rainProb, rainFall, sky, windGust}]
   days: [],        // Landeswetterdienst: [{date, idx, title, sky, tMin, tMax, rainProb, reliability, astronomy?, sunshineDuration}]
-  openMeteo: null, // Position Zimat (inkl. past_days)
+  openMeteo: null, // aktuelle Position (Standard: Zimat), inkl. past_days
   kachelmann: null,// {hourly:[...], daily:[...]}
   heu: null,
+  municipalities: null, // alle 116 Südtiroler Gemeinden (für die Ortssuche)
   lastUpdated: null,
 };
 
 // ==========================================================================
 // DATA LOADING – Landeswetterdienst Südtirol
 // ==========================================================================
-async function loadKiensHourly() {
-  const url = `${CONFIG.providerBase}/municipalities/${CONFIG.kiens.uuid}.json`;
+async function loadMunicipalities() {
+  const url = `${CONFIG.providerBase}/static-data/municipalities.json`;
+  STATE.municipalities = await fetchJSON(url, 9000);
+}
+
+async function loadMunicipalityHourly() {
+  const url = `${CONFIG.providerBase}/municipalities/${CONFIG.municipality.uuid}.json`;
   const data = await fetchJSON(url);
   const start = new Date(data.start);
   const groupKey = Object.keys(data).find(k => k !== 'start' && k !== 'end');
@@ -363,13 +385,13 @@ async function loadKiensHourly() {
   });
 }
 
-async function loadKiensDay(dayIndex) {
-  const id = CONFIG.kiens.baseBulletinId + dayIndex * 1440;
+async function loadMunicipalityDay(dayIndex) {
+  const id = CONFIG.baseBulletinId + dayIndex * 1440;
   const url = `${CONFIG.providerBase}/southtyrol/de_${id}.json`;
   const data = await fetchJSON(url);
   const bulletin = data?.data?.bulletins?.[0];
   if (!bulletin) return null;
-  const metrics = (bulletin.municipalityMetrics || []).find(m => m.venueId === CONFIG.kiens.uuid) || {};
+  const metrics = (bulletin.municipalityMetrics || []).find(m => m.venueId === CONFIG.municipality.uuid) || {};
   return {
     idx: dayIndex,
     date: new Date(bulletin.period?.start || data.meta.date),
@@ -987,12 +1009,152 @@ function renderHeuwetter() {
 }
 
 // ==========================================================================
+// ORTSSUCHE (alle Fraktionen/Orte Südtirols) – Standard bleibt immer Zimat
+// ==========================================================================
+// Nominatim (OpenStreetMap) findet auch kleine Weiler/Fraktionen, die in den
+// 116 Gemeinden des Landeswetterdienstes nicht einzeln vorkommen. Aus dem
+// Ergebnis wird per Namens-Abgleich die zugehörige Gemeinde ermittelt, damit
+// die Landeswetterdienst-Daten (nur je Gemeinde verfügbar) mitwechseln.
+function normalizeName(s) {
+  return (s || '').toLowerCase().normalize('NFD').replace(/\p{Diacritic}/gu, '').replace(/[^a-z0-9]/g, '');
+}
+function matchMunicipality(displayName) {
+  if (!STATE.municipalities?.length || !displayName) return null;
+  const tokens = displayName.split(',').map(t => t.trim());
+  for (const tok of tokens) {
+    const norm = normalizeName(tok);
+    const m = STATE.municipalities.find(mu => normalizeName(mu.name_de) === norm || normalizeName(mu.name_it) === norm);
+    if (m) return m;
+  }
+  return null;
+}
+
+let locSearchAbort = null;
+async function searchPlaces(query) {
+  if (locSearchAbort) locSearchAbort.abort();
+  locSearchAbort = new AbortController();
+  const p = new URLSearchParams({
+    format: 'json', q: query, addressdetails: '1', limit: '8',
+    viewbox: CONFIG.southTyrolViewbox, bounded: '1', countrycodes: 'it',
+  });
+  p.append('accept-language', 'de');
+  const res = await fetch(`https://nominatim.openstreetmap.org/search?${p.toString()}`, { signal: locSearchAbort.signal });
+  if (!res.ok) throw new Error('HTTP ' + res.status);
+  return res.json();
+}
+
+function updateLocationTexts() {
+  const nameEl = document.getElementById('headerPositionName');
+  const subEl = document.getElementById('headerLocationSub');
+  if (nameEl) nameEl.textContent = CONFIG.position.name;
+  if (subEl) subEl.textContent = CONFIG.position.sub ? `${CONFIG.position.sub} · Südtirol` : 'Südtirol';
+  document.querySelectorAll('.js-loc-position').forEach(el => { el.textContent = CONFIG.position.name; });
+  document.querySelectorAll('.js-loc-municipality').forEach(el => { el.textContent = CONFIG.municipality.name_de; });
+}
+
+function applyLocation({ name, sub, lat, lon, municipality }) {
+  CONFIG.position = { name, sub, lat, lon };
+  if (municipality) {
+    CONFIG.municipality = { uuid: municipality.id, name_de: municipality.name_de, url_slug_de: municipality.url_slug_de };
+  }
+  buildProviders();
+  updateLocationTexts();
+  renderQuickLinks();
+  renderProviderCards();
+  Radar.updatePosition();
+  closeLocationSheet();
+  showToast(`Position: ${name}${municipality ? ' · Landeswetterdienst-Gemeinde: ' + CONFIG.municipality.name_de : ' · keine Gemeinde zugeordnet, nur Open-Meteo/Karte aktualisiert'}`, 4500);
+  loadAll();
+}
+
+function resetToDefaultLocation() {
+  const kiens = STATE.municipalities?.find(m => m.name_de === 'Kiens')
+    || { id: '9a239c35-f405-46ab-ba5d-aeffd2b8af0b', name_de: 'Kiens', url_slug_de: 'kiens' };
+  applyLocation({ name: 'Zimat', sub: 'Fraktion von Kiens', lat: 46.81423, lon: 11.80156, municipality: kiens });
+}
+
+function openLocationSheet() {
+  document.getElementById('locationSheet').hidden = false;
+  const input = document.getElementById('locationSearchInput');
+  input.value = '';
+  renderLocationResults([]);
+  setTimeout(() => input.focus(), 60);
+}
+function closeLocationSheet() {
+  document.getElementById('locationSheet').hidden = true;
+}
+
+function locationResultSub(placeName, municipality) {
+  if (!municipality) return 'Südtirol';
+  if (normalizeName(placeName) === normalizeName(municipality.name_de)) return 'Gemeinde · Südtirol';
+  return `Fraktion von ${municipality.name_de} · Südtirol`;
+}
+
+function renderLocationResults(results, message) {
+  const el = document.getElementById('locationResults');
+  const defaultBtn = `<button class="location-result location-result--default" id="locationDefaultBtn">
+    <span class="location-result__icon">${uiIcon('pin', 'sm')}</span>
+    <span class="location-result__body"><span class="location-result__name">Zimat</span><span class="location-result__sub">Standard · Fraktion von Kiens</span></span>
+  </button>`;
+
+  if (message) {
+    el.innerHTML = defaultBtn + `<p class="location-results__hint">${message}</p>`;
+  } else {
+    el.innerHTML = defaultBtn + results.map((r, i) => {
+      const municipality = matchMunicipality(r.display_name);
+      const placeName = r.display_name.split(',')[0].trim();
+      return `<button class="location-result" data-idx="${i}">
+        <span class="location-result__icon">${uiIcon('pin', 'sm')}</span>
+        <span class="location-result__body"><span class="location-result__name">${placeName}</span><span class="location-result__sub">${locationResultSub(placeName, municipality)}</span></span>
+      </button>`;
+    }).join('');
+  }
+
+  document.getElementById('locationDefaultBtn').addEventListener('click', resetToDefaultLocation);
+  el.querySelectorAll('.location-result:not(.location-result--default)').forEach(btn => {
+    btn.addEventListener('click', () => {
+      const r = results[+btn.dataset.idx];
+      if (!r) return;
+      const municipality = matchMunicipality(r.display_name);
+      const placeName = r.display_name.split(',')[0].trim();
+      const sub = municipality
+        ? (normalizeName(placeName) === normalizeName(municipality.name_de) ? 'Gemeinde' : `Fraktion von ${municipality.name_de}`)
+        : '';
+      applyLocation({ name: placeName, sub, lat: +r.lat, lon: +r.lon, municipality });
+    });
+  });
+}
+
+let locDebounceTimer = null;
+function initLocationPicker() {
+  document.getElementById('locationTrigger').addEventListener('click', openLocationSheet);
+  document.getElementById('locationSheetBackdrop').addEventListener('click', closeLocationSheet);
+  document.getElementById('locationSheetClose').addEventListener('click', closeLocationSheet);
+  const input = document.getElementById('locationSearchInput');
+  input.addEventListener('input', () => {
+    const q = input.value.trim();
+    clearTimeout(locDebounceTimer);
+    if (q.length < 2) { renderLocationResults([]); return; }
+    locDebounceTimer = setTimeout(async () => {
+      renderLocationResults([], 'Suche…');
+      try {
+        const results = await searchPlaces(q);
+        if (!results.length) { renderLocationResults([], 'Keine Ergebnisse gefunden.'); return; }
+        renderLocationResults(results);
+      } catch (e) {
+        if (e.name !== 'AbortError') renderLocationResults([], 'Suche fehlgeschlagen – bitte erneut versuchen.');
+      }
+    }, 450);
+  });
+}
+
+// ==========================================================================
 // LOAD & REFRESH
 // ==========================================================================
 async function loadAll() {
   const results = await Promise.allSettled([
-    loadKiensHourly(),
-    Promise.all([0, 1, 2, 3, 4].map(loadKiensDay)),
+    loadMunicipalityHourly(),
+    Promise.all([0, 1, 2, 3, 4].map(loadMunicipalityDay)),
     loadOpenMeteo(),
     loadKachelmann(),
   ]);
@@ -1048,6 +1210,13 @@ const Radar = {
     }).addTo(this.map);
     this.marker = L.marker([CONFIG.position.lat, CONFIG.position.lon]).addTo(this.map)
       .bindPopup(`${CONFIG.position.name} (${CONFIG.position.sub})`);
+  },
+
+  updatePosition() {
+    if (!this.map) return;
+    this.marker.setLatLng([CONFIG.position.lat, CONFIG.position.lon])
+      .setPopupContent(`${CONFIG.position.name}${CONFIG.position.sub ? ' (' + CONFIG.position.sub + ')' : ''}`);
+    this.map.setView([CONFIG.position.lat, CONFIG.position.lon], this.map.getZoom());
   },
 
   async setMode(mode) {
@@ -1194,9 +1363,13 @@ function switchTab(target) {
   const buttons = document.querySelectorAll('.tabbar__btn');
   panels.forEach(p => p.hidden = p.dataset.tab !== target);
   buttons.forEach(b => b.classList.toggle('is-active', b.dataset.tab === target));
+  document.body.classList.toggle('radar-active', target === 'radar');
   if (target === 'radar') {
     Radar.ensureMap();
-    setTimeout(() => { Radar.map.invalidateSize(); if (!Radar.layers.length) Radar.load(true); }, 50);
+    requestAnimationFrame(() => requestAnimationFrame(() => {
+      Radar.map.invalidateSize();
+      if (!Radar.layers.length) Radar.load(true);
+    }));
   }
   if (target === 'details') {
     setTimeout(renderChart, 30);
@@ -1213,6 +1386,9 @@ function initRadarControls() {
   });
   document.getElementById('playBtn').addEventListener('click', () => Radar.toggle());
   document.getElementById('timeSlider').addEventListener('input', e => Radar.onSlider(+e.target.value));
+  document.getElementById('legendToggle').addEventListener('click', () => {
+    document.getElementById('mapLegend').classList.toggle('is-open');
+  });
 }
 
 function initTheme() {
@@ -1253,12 +1429,17 @@ document.addEventListener('DOMContentLoaded', () => {
   initTabs();
   initRadarControls();
   initAggInfo();
+  initLocationPicker();
   renderQuickLinks();
   renderProviderCards();
 
+  loadMunicipalities().catch(() => showToast('Liste der Südtiroler Gemeinden nicht verfügbar – Ortssuche findet ggf. keine Gemeindezuordnung.'));
   loadAll();
   setInterval(loadAll, CONFIG.refreshForecastMs);
   setInterval(() => { if (!document.getElementById('tab-radar').hidden) Radar.load(true); }, CONFIG.refreshRadarMs);
 
-  window.addEventListener('resize', () => { if (!document.getElementById('tab-details').hidden) renderChart(); });
+  window.addEventListener('resize', () => {
+    if (!document.getElementById('tab-details').hidden) renderChart();
+    if (document.body.classList.contains('radar-active') && Radar.map) Radar.map.invalidateSize();
+  });
 });
