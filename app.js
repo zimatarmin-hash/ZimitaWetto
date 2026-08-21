@@ -249,6 +249,7 @@ const UI_ICON = {
   pin: `<path d="M12 21 C8 16.5 5.5 13 5.5 9.2 a6.5 6.5 0 0 1 13 0 C18.5 13 16 16.5 12 21 Z" fill="none" stroke="currentColor" stroke-width="1.7"/><circle cx="12" cy="9.2" r="2.4" fill="currentColor"/>`,
   ruler: `<rect x="3" y="9" width="18" height="6" rx="1.5" fill="none" stroke="currentColor" stroke-width="1.6"/><line x1="7" y1="9" x2="7" y2="12" stroke="currentColor" stroke-width="1.4"/><line x1="11" y1="9" x2="11" y2="12" stroke="currentColor" stroke-width="1.4"/><line x1="15" y1="9" x2="15" y2="12" stroke="currentColor" stroke-width="1.4"/><line x1="19" y1="9" x2="19" y2="12" stroke="currentColor" stroke-width="1.4"/>`,
   legend: `<rect x="4" y="6" width="16" height="3" rx="1.5" fill="currentColor" opacity="0.9"/><rect x="4" y="11" width="16" height="3" rx="1.5" fill="currentColor" opacity="0.6"/><rect x="4" y="16" width="16" height="3" rx="1.5" fill="currentColor" opacity="0.35"/>`,
+  windarrow: `<line x1="12" y1="20" x2="12" y2="4" stroke="currentColor" stroke-width="2.2" stroke-linecap="round"/><path d="M7 9 L12 4 L17 9" stroke="currentColor" stroke-width="2.2" fill="none" stroke-linecap="round" stroke-linejoin="round"/>`,
   search: `<circle cx="10.5" cy="10.5" r="6.5" fill="none" stroke="currentColor" stroke-width="1.8"/><line x1="15.3" y1="15.3" x2="20.5" y2="20.5" stroke="currentColor" stroke-width="1.8" stroke-linecap="round"/>`,
   close: `<line x1="6" y1="6" x2="18" y2="18" stroke="currentColor" stroke-width="2" stroke-linecap="round"/><line x1="18" y1="6" x2="6" y2="18" stroke="currentColor" stroke-width="2" stroke-linecap="round"/>`,
 };
@@ -410,11 +411,16 @@ async function loadMunicipalityDay(dayIndex) {
   };
 }
 
+const WIND_PROFILE_LEVELS = [1000, 925, 850, 700, 600, 500]; // hPa – Bodennähe bis ~5500m
+function windProfileHourlyParams() {
+  return WIND_PROFILE_LEVELS.flatMap(h => [`wind_speed_${h}hPa`, `wind_direction_${h}hPa`, `geopotential_height_${h}hPa`]);
+}
+
 async function loadOpenMeteo() {
   const p = new URLSearchParams({
     latitude: CONFIG.position.lat, longitude: CONFIG.position.lon,
     current: 'temperature_2m,weather_code,wind_speed_10m',
-    hourly: 'precipitation_probability,temperature_2m,weather_code,relative_humidity_2m,dew_point_2m,wind_speed_10m',
+    hourly: ['precipitation_probability,temperature_2m,weather_code,relative_humidity_2m,dew_point_2m,wind_speed_10m', ...windProfileHourlyParams()].join(','),
     daily: 'temperature_2m_max,temperature_2m_min,precipitation_probability_max,weather_code,precipitation_sum,sunshine_duration',
     timezone: ROME_TZ, forecast_days: 6, past_days: CONFIG.openMeteoPastDays,
   });
@@ -581,13 +587,6 @@ function renderQuickLinks() {
       <span class="quicklink__chevron">${uiIcon('chevron', 'sm')}</span>
     </a>`).join('');
   document.getElementById('quickLinksOverview').innerHTML = html;
-  document.getElementById('quickLinksRadar').innerHTML = RADAR_SOURCE_LINKS.map(l => `
-    <a class="quicklink" href="${l.url}" target="_blank" rel="noopener">
-      <span class="quicklink__badge" style="background:#0e7c9c">${uiIcon('external', 'sm')}</span>
-      <span class="quicklink__body"><span class="quicklink__title">${l.name}</span>
-      <span class="quicklink__sub">wetter.provinz.bz.it</span></span>
-      <span class="quicklink__chevron">${uiIcon('chevron', 'sm')}</span>
-    </a>`).join('');
 }
 
 // ==========================================================================
@@ -627,9 +626,10 @@ function renderCompareTable() {
   }).join('');
 }
 
-function renderProviderCards() {
-  const el = document.getElementById('providerCards');
-  el.innerHTML = PROVIDERS.map(p => `
+function renderProviderCardsInto(containerId, providers) {
+  const el = document.getElementById(containerId);
+  if (!el) return;
+  el.innerHTML = providers.map(p => `
     <div class="provider-card" data-provider="${p.id}">
       <div class="provider-card__head">
         <span class="quicklink__badge" style="background:${p.color}">${p.letter}</span>
@@ -648,7 +648,7 @@ function renderProviderCards() {
   el.querySelectorAll('[data-toggle-preview]').forEach(btn => {
     btn.addEventListener('click', () => {
       const id = btn.dataset.togglePreview;
-      const provider = PROVIDERS.find(p => p.id === id);
+      const provider = providers.find(p => p.id === id);
       const wrap = document.getElementById(`frame-${id}`);
       const isOpen = wrap.classList.contains('is-open');
       if (isOpen) {
@@ -664,6 +664,27 @@ function renderProviderCards() {
     });
   });
 }
+function renderProviderCards() { renderProviderCardsInto('providerCards', PROVIDERS); }
+
+// Flugwetter-Spezialdienste (Segelflug/Gleitschirm): SkySight & TopMeteo sind
+// kostenpflichtige Abos ohne öffentliche API – bewusst nur als Link, keine
+// erfundenen Vergleichswerte. Siehe Windprofil (Live-Radar-Tab) für eine
+// kostenlose Alternative zu Meteoblues Aerological-Paket.
+const FLIGHT_WEATHER_PROVIDERS = [
+  {
+    id: 'skysight', name: 'SkySight', letter: 'SK', color: '#7c3fc4',
+    url: 'https://skysight.io',
+    desc: 'Segelflug-/Gleitschirmwetter (Thermik, Wind, Wellen, Vertikalprofile). Ab ca. 89€/Jahr – keine öffentliche API.',
+    embeddable: false,
+  },
+  {
+    id: 'topmeteo', name: 'TopMeteo', letter: 'TM', color: '#c4763f',
+    url: 'https://www.topmeteo.eu',
+    desc: 'Flugwetter für Segelflug, Gleitschirm, Ballon (Thermikkarten, Windprofile 1-kt-Auflösung). Kostenpflichtiges Abo – keine öffentliche API.',
+    embeddable: false,
+  },
+];
+function renderFlightWeatherCards() { renderProviderCardsInto('flightWeatherCards', FLIGHT_WEATHER_PROVIDERS); }
 
 // ==========================================================================
 // RENDER – Details (Chart, Astronomie, Standort)
@@ -1175,6 +1196,7 @@ async function loadAll() {
   renderStatus(); renderHourly(); renderDayList();
   renderCompareTable(); renderChart(); renderAstro(); renderLocation();
   renderHeuwetter();
+  if (document.getElementById('windProfilePanel')?.classList.contains('is-open')) renderWindProfile();
 }
 
 // ==========================================================================
@@ -1224,6 +1246,8 @@ const Radar = {
     this.mode = mode;
     document.querySelectorAll('#radarModeSwitch .segmented__btn').forEach(b => b.classList.toggle('is-active', b.dataset.mode === mode));
     if (this.overlay) { this.map?.removeLayer(this.overlay); this.overlay = null; }
+    const srcLink = document.getElementById('mapSourceLink');
+    if (srcLink) srcLink.href = mode === 'live' ? RADAR_SOURCE_LINKS[0].url : RADAR_SOURCE_LINKS[1].url;
     await this.load(true);
   },
 
@@ -1356,6 +1380,55 @@ function buildFrames(layer, base) {
 }
 
 // ==========================================================================
+// WINDPROFIL (Open-Meteo Druckflächen) – kostenlose Alternative zum
+// kostenpflichtigen Meteoblue "Thermal & Aerological Package".
+// ==========================================================================
+function nearestHourlyIndex(times) {
+  const now = Date.now();
+  let bestIdx = 0, bestDiff = Infinity;
+  times.forEach((t, i) => {
+    const diff = Math.abs(new Date(t).getTime() - now);
+    if (diff < bestDiff) { bestDiff = diff; bestIdx = i; }
+  });
+  return bestIdx;
+}
+
+function computeWindProfile() {
+  const hourly = STATE.openMeteo?.hourly;
+  if (!hourly?.time) return null;
+  const idx = nearestHourlyIndex(hourly.time);
+  const levels = WIND_PROFILE_LEVELS.map(hpa => ({
+    hpa,
+    speed: hourly[`wind_speed_${hpa}hPa`]?.[idx],
+    dir: hourly[`wind_direction_${hpa}hPa`]?.[idx],
+    alt: hourly[`geopotential_height_${hpa}hPa`]?.[idx],
+  })).filter(l => typeof l.speed === 'number' && typeof l.alt === 'number');
+  levels.sort((a, b) => a.alt - b.alt);
+  return levels.length ? { time: hourly.time[idx], levels } : null;
+}
+
+function renderWindProfile() {
+  const panel = document.getElementById('windProfilePanel');
+  const profile = computeWindProfile();
+  if (!profile) {
+    panel.innerHTML = '<p class="wind-profile__hint">Windprofil aktuell nicht verfügbar.</p>';
+    return;
+  }
+  const maxSpeed = Math.max(10, ...profile.levels.map(l => l.speed));
+  panel.innerHTML = `<div class="wind-profile__time">${fmtTime(new Date(profile.time))} Uhr · ${CONFIG.position.name}</div>` +
+    profile.levels.slice().reverse().map(l => `
+      <div class="wind-profile__row" title="${l.hpa}hPa">
+        <span class="wind-profile__alt">${Math.round(l.alt)}m</span>
+        <span class="wind-profile__bararea">
+          <span class="wind-profile__bar" style="width:${Math.max(4, l.speed / maxSpeed * 100).toFixed(0)}%"></span>
+          <span class="wind-profile__arrow" style="transform:rotate(${(l.dir + 180) % 360}deg)">${uiIcon('windarrow', 'xs')}</span>
+        </span>
+        <span class="wind-profile__speed">${Math.round(l.speed)}km/h</span>
+      </div>`).join('') +
+    '<p class="wind-profile__hint">Höhe ü.M. · Open-Meteo-Modell, kein Meteoblue-Abo nötig.</p>';
+}
+
+// ==========================================================================
 // TABS & THEME
 // ==========================================================================
 function switchTab(target) {
@@ -1387,7 +1460,20 @@ function initRadarControls() {
   document.getElementById('playBtn').addEventListener('click', () => Radar.toggle());
   document.getElementById('timeSlider').addEventListener('input', e => Radar.onSlider(+e.target.value));
   document.getElementById('legendToggle').addEventListener('click', () => {
-    document.getElementById('mapLegend').classList.toggle('is-open');
+    document.getElementById('windProfilePanel').classList.remove('is-open');
+    document.getElementById('windProfileToggle').classList.remove('is-active');
+    const legend = document.getElementById('mapLegend');
+    legend.classList.toggle('is-open');
+    document.getElementById('legendToggle').classList.toggle('is-active', legend.classList.contains('is-open'));
+  });
+  document.getElementById('windProfileToggle').addEventListener('click', () => {
+    document.getElementById('mapLegend').classList.remove('is-open');
+    document.getElementById('legendToggle').classList.remove('is-active');
+    const btn = document.getElementById('windProfileToggle');
+    const panel = document.getElementById('windProfilePanel');
+    panel.classList.toggle('is-open');
+    btn.classList.toggle('is-active', panel.classList.contains('is-open'));
+    if (panel.classList.contains('is-open')) renderWindProfile();
   });
 }
 
@@ -1432,6 +1518,7 @@ document.addEventListener('DOMContentLoaded', () => {
   initLocationPicker();
   renderQuickLinks();
   renderProviderCards();
+  renderFlightWeatherCards();
 
   loadMunicipalities().catch(() => showToast('Liste der Südtiroler Gemeinden nicht verfügbar – Ortssuche findet ggf. keine Gemeindezuordnung.'));
   loadAll();

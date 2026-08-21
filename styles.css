@@ -368,23 +368,38 @@ button{ font-family: inherit; }
 
 .map-card{ padding: 0; overflow:hidden; position: relative; }
 #map{ width:100%; height: 46vh; min-height: 320px; background:#cfd8dc; }
-.map-legend-toggle{
+.map-toolbar{
   position:absolute; top:10px; right:10px; z-index:500;
+  display:flex; flex-direction:column; gap:8px;
+}
+.map-tool-btn{
   width:36px; height:36px; border-radius:50%; border:none;
   background: var(--card-bg); color: var(--text); box-shadow: var(--shadow);
   display:flex; align-items:center; justify-content:center; cursor:pointer;
+  text-decoration:none; flex:none;
 }
-.map-legend-toggle:active{ transform: scale(0.94); }
-.map-legend{
+.map-tool-btn:active{ transform: scale(0.94); }
+.map-tool-btn.is-active{ background: var(--accent); color:#fff; }
+.map-legend, .wind-profile-panel{
   display:none; flex-direction:column; gap:6px;
-  position:absolute; top:54px; right:10px; z-index:500;
-  max-width: 168px; max-height: calc(100% - 64px); overflow-y:auto;
+  position:absolute; top:10px; right:54px; z-index:500;
+  max-width: 190px; max-height: calc(100% - 20px); overflow-y:auto;
   background: var(--card-bg); border-radius: var(--radius-md); box-shadow: var(--shadow-lg);
   padding: 10px 11px; font-size:11px; color: var(--text-muted);
 }
-.map-legend.is-open{ display:flex; }
+.map-legend.is-open, .wind-profile-panel.is-open{ display:flex; }
 .map-legend__item{ display:flex; align-items:center; gap:5px; font-weight:600; white-space:nowrap; }
 .map-legend__swatch{ width:11px; height:11px; border-radius:3px; display:inline-block; flex:none; }
+
+/* ===== Windprofil-Panel ===== */
+.wind-profile__time{ font-size:11px; font-weight:800; color: var(--text); margin-bottom:4px; text-align:center; }
+.wind-profile__row{ display:flex; align-items:center; gap:6px; }
+.wind-profile__alt{ flex:0 0 44px; font-size:10px; font-weight:700; color: var(--text); text-align:right; }
+.wind-profile__bararea{ position:relative; flex:1; height:14px; background: var(--card-bg-soft); border-radius:4px; overflow:visible; }
+.wind-profile__bar{ position:absolute; left:0; top:0; height:100%; border-radius:4px; background: var(--accent); opacity:.65; }
+.wind-profile__arrow{ position:absolute; right:-2px; top:50%; width:12px; height:12px; margin-top:-6px; color: var(--accent-strong); transform-origin:center; }
+.wind-profile__speed{ flex:0 0 40px; font-size:10px; font-weight:700; color: var(--text); }
+.wind-profile__hint{ margin:0; font-size:11px; text-align:center; }
 
 .player-card{ padding: 15px 16px; }
 .player-row{ display:flex; align-items:center; gap:12px; }
@@ -480,21 +495,20 @@ button{ font-family: inherit; }
 body.radar-active .app-header{ display:none; }
 body.radar-active #app{
   height: 100vh; display:flex; flex-direction:column; overflow:hidden;
-  padding-top: calc(14px + var(--safe-top));
+  padding-top: calc(10px + var(--safe-top));
+  padding-bottom: calc(var(--tabbar-h) + var(--safe-bottom));
 }
 body.radar-active #tab-radar{
-  flex: 1; display:flex; flex-direction:column; min-height:0; overflow-y:auto;
+  flex: 1; display:flex; flex-direction:column; min-height:0; overflow:hidden;
   animation: none;
 }
 body.radar-active #tab-radar .radar-toolbar,
 body.radar-active #tab-radar .layer-chip-card,
-body.radar-active #tab-radar .player-card{ flex: 0 0 auto; }
-body.radar-active #tab-radar .map-card{ flex: 1 1 auto; min-height: 220px; margin-bottom: 10px; }
-body.radar-active #tab-radar .radar-toolbar{ margin-bottom: 10px; }
-body.radar-active #tab-radar .layer-chip-card{ margin-bottom: 10px; }
+body.radar-active #tab-radar .player-card{ flex: 0 0 auto; margin-bottom: 8px; }
+body.radar-active #tab-radar .player-card{ margin-bottom: 0; padding: 10px 14px; }
+body.radar-active #tab-radar .layer-chip-card{ padding: 8px; }
+body.radar-active #tab-radar .map-card{ flex: 1 1 auto; min-height: 260px; margin-bottom: 8px; }
 body.radar-active #tab-radar #map{ height: 100%; min-height: 0; }
-body.radar-active #tab-radar .section-title,
-body.radar-active #tab-radar .quicklinks{ flex: 0 0 auto; }
 
 /* ===== Leaflet tweaks ===== */
 .leaflet-control-attribution{ font-size: 9px !important; }

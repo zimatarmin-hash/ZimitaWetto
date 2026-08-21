@@ -129,6 +129,10 @@
     <p class="section-hint">Kachelmannwetter bietet keine offizielle API – die Werte oben werden live von der Webseite gelesen. Hier geht's zusätzlich direkt zur Originalseite.</p>
     <div class="provider-cards" id="providerCards"></div>
 
+    <h2 class="section-title">Flugwetter (Thermik &amp; Wind)</h2>
+    <p class="section-hint">SkySight &amp; TopMeteo sind kostenpflichtige Spezialdienste für Segelflug/Gleitschirm ohne öffentliche API – hier nur als Schnellzugriff, ohne Live-Zahlen in dieser App. Ein kostenloses Windprofil auf Open-Meteo-Basis findest du im Live-Radar-Tab.</p>
+    <div class="provider-cards" id="flightWeatherCards"></div>
+
   </section>
 
   <!-- ================= TAB: LIVE-RADAR ================= -->
@@ -147,8 +151,13 @@
 
     <div class="card map-card">
       <div id="map"></div>
-      <button class="map-legend-toggle" id="legendToggle" aria-label="Legende ein-/ausblenden" data-icon="legend" data-icon-size="sm"></button>
+      <div class="map-toolbar">
+        <button class="map-tool-btn" id="legendToggle" aria-label="Legende ein-/ausblenden" title="Legende" data-icon="legend" data-icon-size="sm"></button>
+        <button class="map-tool-btn" id="windProfileToggle" aria-label="Windprofil ein-/ausblenden" title="Windprofil" data-icon="wind" data-icon-size="sm"></button>
+        <a class="map-tool-btn" id="mapSourceLink" href="https://wetter.provinz.bz.it/de/radar-blitze-und-satellit" target="_blank" rel="noopener" aria-label="Original-Quelle öffnen" title="Original-Quelle" data-icon="external" data-icon-size="sm"></a>
+      </div>
       <div class="map-legend" id="mapLegend"></div>
+      <div class="wind-profile-panel" id="windProfilePanel"></div>
     </div>
 
     <div class="card player-card">
@@ -159,9 +168,6 @@
       </div>
       <p class="player-hint" id="radarStatus">Lade Radardaten…</p>
     </div>
-
-    <h2 class="section-title">Quelle</h2>
-    <div class="quicklinks" id="quickLinksRadar"></div>
 
   </section>
 
@@ -217,6 +223,7 @@
       <p><strong>Zimita Wetto</strong> bündelt öffentliche Wetterdaten des Landes Südtirol (Wetterdienst &amp; Zivilschutz, Gemeinde <span class="js-loc-municipality">Kiens</span>), Open-Meteo (Position <span class="js-loc-position">Zimat</span>) und Kachelmannwetter zu einem gemeinsamen Schnitt. Kachelmannwetter stellt keine offizielle API bereit – die Werte werden live von der Webseite über einen Lese-Proxy (r.jina.ai) extrahiert und können daher gelegentlich kurzfristig fehlen. Bergfex wurde entfernt, da die Seite automatisierte Anfragen aktiv blockiert (HTTP 429).</p>
       <p>Über den Ort-Umschalter oben im Kopfbereich lässt sich jede Fraktion bzw. jeder Ort Südtirols suchen; Position, Karte und (falls zuordenbar) die Landeswetterdienst-Gemeinde stellen sich dann automatisch um. Kachelmannwetter bleibt dabei technisch bedingt immer auf Kiens bezogen. Beim Neuladen der Seite gilt wieder <span class="js-loc-position">Zimat</span> als Standard.</p>
       <p>Die Live-Radar-Zeitleiste (bis 3h zurück) und die amtliche Niederschlagsvorhersage (bis ca. 24h voraus) stammen von den Rasterbildern der Provinz Südtirol mit exakter Georeferenzierung (EPSG:25832 → WGS84 via proj4js).</p>
+      <p>Das Windprofil-Icon auf der Karte zeigt Windgeschwindigkeit &amp; -richtung auf mehreren Höhenstufen (Open-Meteo-Druckflächendaten, 1000–500 hPa) – als kostenlose Alternative zu Meteoblues kostenpflichtigem "Thermal &amp; Aerological Package". SkySight und TopMeteo (Flugwetter für Segelflug/Gleitschirm) sind ebenfalls kostenpflichtige Abo-Dienste ohne öffentliche API und daher im Vergleich-Tab nur als Link verfügbar, nicht mit Live-Zahlen.</p>
       <p>Die Positionsanzeige (Karte, Open-Meteo) bezieht sich auf <span class="js-loc-position">Zimat</span>. Die amtlichen Landeswetterdienst-Daten liegen nur auf Gemeindeebene vor und gelten daher für <span class="js-loc-municipality">Kiens</span>.</p>
       <p class="about-card__meta">Letzte Aktualisierung: <span id="aboutUpdated">--</span></p>
     </div>
