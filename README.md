@@ -42,9 +42,21 @@ gespeichert – nach einem Neuladen der Seite gilt wieder Zimat als Standard.
 | **Live-Rasterdaten der Provinz** (`static-meteo.provincia.bz.it`) | Live-Radar, Blitze, Hagel, Satellit, Niederschlagsvorhersage (INCA/ICON, ca. 24h) | Zeitserien echter Kartenbilder (WEBP) als Bild-Overlay auf einer Leaflet-Karte, georeferenziert per `proj4js` (EPSG:25832 → WGS84) |
 | **Open-Meteo** (`api.open-meteo.com`) | Zweite, unabhängige Quelle für den aggregierten Status & Vergleich, Position **Zimat** | Freie, CORS-offene Wetter-API ohne Key |
 | **Kachelmannwetter** | Stunden-/3-Tage-Werte im Vergleich & aggregierten Status | Keine öffentliche API – die Werte werden live vom öffentlichen `ajax_pub`-Endpunkt der Webseite über den Lese-Proxy [r.jina.ai](https://r.jina.ai) gelesen und geparst. Inoffiziell, kann bei Markup-Änderungen brechen (Fallback: "–") |
+| **GFS (NOAA)** &amp; **ICON (DWD)** | Zwei weitere Spalten im Vergleich-Tab | Globale Wettermodelle der US- bzw. deutschen Wetterbehörde, kostenlos re-served über Open-Meteos `models=gfs_seamless,icon_seamless`-Parameter (dieselbe API wie oben, keine eigene Schnittstelle der Behörden nötig). Da Einzelmodelle keine Wahrscheinlichkeit liefern, zeigen diese Spalten die Modell-Niederschlagsmenge (mm) statt %. |
 
 Der „aggregierte Status" ist der Mittelwert aus bis zu 3 Quellen (Landeswetterdienst,
-Open-Meteo, Kachelmann) – siehe „Details"-Button auf der Statuskachel.
+Open-Meteo, Kachelmann) – siehe „Details"-Button auf der Statuskachel. GFS/ICON
+fließen bewusst nicht in diesen Schnitt ein (nur Tageswerte, kein Nowcast) und
+erscheinen nur als zusätzliche Vergleichsspalten.
+
+## Windprofil (Details-Tab)
+
+Eigene Karte unter dem Temperatur/Niederschlag-Diagramm: Windgeschwindigkeit
+&amp; -richtung auf 6 Druckflächen (1000–500 hPa, ca. 100–5750 m) für die
+aktuelle Stunde, aus denselben Open-Meteo-Druckflächendaten wie das
+Heuwetter-Modul. Kostenlose Alternative zu Meteoblues kostenpflichtigem
+"Thermal &amp; Aerological Package" (Registrierung/Abo nötig, daher nicht
+integriert).
 
 ## Design & Icons
 

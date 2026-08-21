@@ -353,6 +353,7 @@ const STATE = {
   kachelmann: null,// {hourly:[...], daily:[...]}
   heu: null,
   municipalities: null, // alle 116 Südtiroler Gemeinden (für die Ortssuche)
+  modelCompare: null,   // GFS (NOAA) & ICON (DWD) Modelldaten für den Vergleich
   lastUpdated: null,
 };
 
@@ -423,6 +424,21 @@ async function loadOpenMeteo() {
     hourly: ['precipitation_probability,temperature_2m,weather_code,relative_humidity_2m,dew_point_2m,wind_speed_10m', ...windProfileHourlyParams()].join(','),
     daily: 'temperature_2m_max,temperature_2m_min,precipitation_probability_max,weather_code,precipitation_sum,sunshine_duration',
     timezone: ROME_TZ, forecast_days: 6, past_days: CONFIG.openMeteoPastDays,
+  });
+  return fetchJSON(`${CONFIG.openMeteo}?${p.toString()}`);
+}
+
+// Modellvergleich: GFS (NOAA, USA) & ICON (DWD, Deutschland) – beide sind die
+// oeffentlichen globalen Wettermodelle der jeweiligen Behoerde, von Open-Meteo
+// kostenlos re-served (keine eigene Schnittstelle der Behoerden nötig).
+// Einzelmodelle liefern Niederschlagsmenge statt Wahrscheinlichkeit.
+const MODEL_COMPARE_IDS = ['gfs_seamless', 'icon_seamless'];
+async function loadModelComparison() {
+  const p = new URLSearchParams({
+    latitude: CONFIG.position.lat, longitude: CONFIG.position.lon,
+    daily: 'temperature_2m_max,temperature_2m_min,precipitation_sum,weather_code',
+    timezone: ROME_TZ, forecast_days: 5,
+    models: MODEL_COMPARE_IDS.join(','),
   });
   return fetchJSON(`${CONFIG.openMeteo}?${p.toString()}`);
 }
@@ -598,13 +614,20 @@ function cellHtml(iconHtml, tMin, tMax, rainProb) {
     <span class="compare-cell__temp">${t}</span>
     ${rainProb != null ? `<span class="compare-cell__rain">${round(rainProb)}% Regen</span>` : ''}`;
 }
+function cellHtmlMm(iconHtml, tMin, tMax, mm) {
+  const t = (tMin != null && tMax != null) ? `${round(tMin)}° / ${round(tMax)}°` : (tMax != null ? `${round(tMax)}°` : '');
+  return `<span class="compare-cell__icon">${iconHtml}</span>
+    <span class="compare-cell__temp">${t}</span>
+    ${mm != null ? `<span class="compare-cell__rain">${mm.toFixed(1)}mm</span>` : ''}`;
+}
 function naCell() { return '<span class="compare-cell__na">–</span>'; }
 
 function renderCompareTable() {
   const tbody = document.querySelector('#compareTable tbody');
   const om = STATE.openMeteo;
   const omOffset = CONFIG.openMeteoPastDays;
-  if (!STATE.days.length) { tbody.innerHTML = '<tr><td colspan="4" class="placeholder">Keine Daten.</td></tr>'; return; }
+  const mc = STATE.modelCompare?.daily;
+  if (!STATE.days.length) { tbody.innerHTML = '<tr><td colspan="6" class="placeholder">Keine Daten.</td></tr>'; return; }
   tbody.innerHTML = STATE.days.map((d, i) => {
     const suedtirol = cellHtml(skyIcon(d.sky, false), d.tMin, d.tMax, d.rainProb);
 
@@ -617,11 +640,20 @@ function renderCompareTable() {
     const km = STATE.kachelmann?.daily?.[i];
     const kachelmannCell = km ? cellHtml(weatherIconMarkup(km.conditionKey, false), km.tMin, km.tMax, null) : naCell();
 
+    let gfsCell = naCell();
+    let iconCell = naCell();
+    if (mc?.time?.[i]) {
+      gfsCell = cellHtmlMm(omIcon(mc.weather_code_gfs_seamless?.[i], false), mc.temperature_2m_min_gfs_seamless?.[i], mc.temperature_2m_max_gfs_seamless?.[i], mc.precipitation_sum_gfs_seamless?.[i]);
+      iconCell = cellHtmlMm(omIcon(mc.weather_code_icon_seamless?.[i], false), mc.temperature_2m_min_icon_seamless?.[i], mc.temperature_2m_max_icon_seamless?.[i], mc.precipitation_sum_icon_seamless?.[i]);
+    }
+
     return `<tr>
       <td>${fmtDayLabel(d.date, d.idx)}</td>
       <td>${suedtirol}</td>
       <td>${omCell}</td>
       <td>${kachelmannCell}</td>
+      <td>${gfsCell}</td>
+      <td>${iconCell}</td>
     </tr>`;
   }).join('');
 }
@@ -1158,6 +1190,7 @@ async function loadAll() {
     Promise.all([0, 1, 2, 3, 4].map(loadMunicipalityDay)),
     loadOpenMeteo(),
     loadKachelmann(),
+    loadModelComparison(),
   ]);
 
   if (results[0].status === 'fulfilled') STATE.hourly = results[0].value;
@@ -1172,11 +1205,13 @@ async function loadAll() {
   if (results[3].status === 'fulfilled') STATE.kachelmann = results[3].value;
   else { STATE.kachelmann = null; showToast('Kachelmann-Daten aktuell nicht lesbar (kein offizielles API).'); }
 
+  if (results[4].status === 'fulfilled') STATE.modelCompare = results[4].value;
+  else STATE.modelCompare = null;
+
   STATE.lastUpdated = new Date();
   renderStatus(); renderHourly(); renderDayList();
   renderCompareTable(); renderChart(); renderAstro(); renderLocation();
-  renderHeuwetter();
-  if (document.getElementById('windProfilePanel')?.classList.contains('is-open')) renderWindProfile();
+  renderHeuwetter(); renderWindProfile();
 }
 
 // ==========================================================================
@@ -1426,6 +1461,7 @@ function switchTab(target) {
   }
   if (target === 'details') {
     setTimeout(renderChart, 30);
+    renderWindProfile();
   }
 }
 function initTabs() {
@@ -1440,20 +1476,9 @@ function initRadarControls() {
   document.getElementById('playBtn').addEventListener('click', () => Radar.toggle());
   document.getElementById('timeSlider').addEventListener('input', e => Radar.onSlider(+e.target.value));
   document.getElementById('legendToggle').addEventListener('click', () => {
-    document.getElementById('windProfilePanel').classList.remove('is-open');
-    document.getElementById('windProfileToggle').classList.remove('is-active');
     const legend = document.getElementById('mapLegend');
     legend.classList.toggle('is-open');
     document.getElementById('legendToggle').classList.toggle('is-active', legend.classList.contains('is-open'));
-  });
-  document.getElementById('windProfileToggle').addEventListener('click', () => {
-    document.getElementById('mapLegend').classList.remove('is-open');
-    document.getElementById('legendToggle').classList.remove('is-active');
-    const btn = document.getElementById('windProfileToggle');
-    const panel = document.getElementById('windProfilePanel');
-    panel.classList.toggle('is-open');
-    btn.classList.toggle('is-active', panel.classList.contains('is-open'));
-    if (panel.classList.contains('is-open')) renderWindProfile();
   });
 }
 

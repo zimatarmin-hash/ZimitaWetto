@@ -318,7 +318,7 @@ button{ font-family: inherit; }
 /* ===== Compare table ===== */
 .table-card{ padding: 9px 0 15px; }
 .table-scroll{ overflow-x:auto; padding: 0 12px; -webkit-overflow-scrolling: touch; }
-.compare-table{ width:100%; border-collapse: collapse; font-size: 13.5px; min-width: 560px; }
+.compare-table{ width:100%; border-collapse: collapse; font-size: 13.5px; min-width: 780px; }
 .compare-table th{
   text-align:center; font-size:11.5px; color: var(--text-muted); font-weight:800;
   padding: 8px 6px; border-bottom: 2px solid var(--card-border);
@@ -380,26 +380,28 @@ button{ font-family: inherit; }
 }
 .map-tool-btn:active{ transform: scale(0.94); }
 .map-tool-btn.is-active{ background: var(--accent); color:#fff; }
-.map-legend, .wind-profile-panel{
+.map-legend{
   display:none; flex-direction:column; gap:6px;
   position:absolute; top:10px; right:54px; z-index:500;
   max-width: 190px; max-height: calc(100% - 20px); overflow-y:auto;
   background: var(--card-bg); border-radius: var(--radius-md); box-shadow: var(--shadow-lg);
   padding: 10px 11px; font-size:11px; color: var(--text-muted);
 }
-.map-legend.is-open, .wind-profile-panel.is-open{ display:flex; }
+.map-legend.is-open{ display:flex; }
 .map-legend__item{ display:flex; align-items:center; gap:5px; font-weight:600; white-space:nowrap; }
 .map-legend__swatch{ width:11px; height:11px; border-radius:3px; display:inline-block; flex:none; }
 
-/* ===== Windprofil-Panel ===== */
-.wind-profile__time{ font-size:11px; font-weight:800; color: var(--text); margin-bottom:4px; text-align:center; }
-.wind-profile__row{ display:flex; align-items:center; gap:6px; }
-.wind-profile__alt{ flex:0 0 44px; font-size:10px; font-weight:700; color: var(--text); text-align:right; }
-.wind-profile__bararea{ position:relative; flex:1; height:14px; background: var(--card-bg-soft); border-radius:4px; overflow:visible; }
-.wind-profile__bar{ position:absolute; left:0; top:0; height:100%; border-radius:4px; background: var(--accent); opacity:.65; }
-.wind-profile__arrow{ position:absolute; right:-2px; top:50%; width:12px; height:12px; margin-top:-6px; color: var(--accent-strong); transform-origin:center; }
-.wind-profile__speed{ flex:0 0 40px; font-size:10px; font-weight:700; color: var(--text); }
-.wind-profile__hint{ margin:0; font-size:11px; text-align:center; }
+/* ===== Windprofil (Details-Tab, eigene Karte) ===== */
+.wind-profile-card{ padding: 16px 14px; }
+.wind-profile-panel{ display:flex; flex-direction:column; gap:9px; }
+.wind-profile__time{ font-size:12.5px; font-weight:800; color: var(--text); margin-bottom:2px; text-align:center; }
+.wind-profile__row{ display:flex; align-items:center; gap:10px; }
+.wind-profile__alt{ flex:0 0 56px; font-size:12px; font-weight:700; color: var(--text); text-align:right; }
+.wind-profile__bararea{ position:relative; flex:1; height:20px; background: var(--card-bg-soft); border-radius:6px; overflow:visible; }
+.wind-profile__bar{ position:absolute; left:0; top:0; height:100%; border-radius:6px; background: var(--accent); opacity:.65; }
+.wind-profile__arrow{ position:absolute; right:2px; top:50%; width:16px; height:16px; margin-top:-8px; color: var(--accent-strong); transform-origin:center; }
+.wind-profile__speed{ flex:0 0 56px; font-size:12.5px; font-weight:700; color: var(--text); text-align:right; }
+.wind-profile__hint{ margin:6px 0 0; font-size:11.5px; text-align:center; color: var(--text-muted); }
 
 .player-card{ padding: 15px 16px; }
 .player-row{ display:flex; align-items:center; gap:12px; }

@@ -107,7 +107,7 @@
   <!-- ================= TAB: VERGLEICH ================= -->
   <section class="tab-panel" id="tab-compare" data-tab="compare" hidden>
 
-    <h2 class="section-title">Prognose-Vergleich (3 Quellen)</h2>
+    <h2 class="section-title">Prognose-Vergleich (5 Quellen)</h2>
     <div class="card table-card">
       <div class="table-scroll">
         <table class="compare-table" id="compareTable">
@@ -117,12 +117,14 @@
               <th>Südtirolwetter<br><small>Landeswetterdienst</small></th>
               <th>Open-Meteo<br><small class="js-loc-position">Zimat</small></th>
               <th>Kachelmann<br><small>live gelesen</small></th>
+              <th>GFS<br><small>NOAA (USA)</small></th>
+              <th>ICON<br><small>DWD (D)</small></th>
             </tr>
           </thead>
-          <tbody><tr><td colspan="4" class="placeholder">Lade Vergleichsdaten…</td></tr></tbody>
+          <tbody><tr><td colspan="6" class="placeholder">Lade Vergleichsdaten…</td></tr></tbody>
         </table>
       </div>
-      <p class="table-card__note">Werte: Tagestemperatur min/max · Niederschlagswahrscheinlichkeit. Kachelmann hat keine offizielle API – Werte werden live von der Webseite gelesen (Reader-Proxy) und können daher gelegentlich fehlen ("–").</p>
+      <p class="table-card__note">Werte: Tagestemperatur min/max · Niederschlag (Wahrscheinlichkeit bzw. bei GFS/ICON die Modell-Niederschlagsmenge in mm, da Einzelmodelle ohne Wahrscheinlichkeitsangabe). Kachelmann hat keine offizielle API – Werte werden live von der Webseite gelesen (Reader-Proxy) und können daher gelegentlich fehlen ("–"). GFS &amp; ICON sind die globalen Wettermodelle von NOAA bzw. DWD, bereitgestellt über Open-Meteo.</p>
     </div>
 
     <h2 class="section-title">Weitere Wetterdienste</h2>
@@ -149,11 +151,9 @@
       <div id="map"></div>
       <div class="map-toolbar">
         <button class="map-tool-btn" id="legendToggle" aria-label="Legende ein-/ausblenden" title="Legende" data-icon="legend" data-icon-size="sm"></button>
-        <button class="map-tool-btn" id="windProfileToggle" aria-label="Windprofil ein-/ausblenden" title="Windprofil" data-icon="wind" data-icon-size="sm"></button>
         <a class="map-tool-btn" id="mapSourceLink" href="https://wetter.provinz.bz.it/de/radar-blitze-und-satellit" target="_blank" rel="noopener" aria-label="Original-Quelle öffnen" title="Original-Quelle" data-icon="external" data-icon-size="sm"></a>
       </div>
       <div class="map-legend" id="mapLegend"></div>
-      <div class="wind-profile-panel" id="windProfilePanel"></div>
     </div>
 
     <div class="card player-card">
@@ -204,6 +204,11 @@
       <canvas id="detailChart" height="220"></canvas>
     </div>
 
+    <h2 class="section-title">Windprofil</h2>
+    <div class="card wind-profile-card">
+      <div class="wind-profile-panel" id="windProfilePanel"><div class="placeholder">Lade Windprofil…</div></div>
+    </div>
+
     <h2 class="section-title">Sonne &amp; Mond</h2>
     <div class="card">
       <div class="sun-grid" id="sunGrid"><div class="placeholder">Lade Astronomiedaten…</div></div>
@@ -219,7 +224,7 @@
       <p><strong>Zimita Wetto</strong> bündelt öffentliche Wetterdaten des Landes Südtirol (Wetterdienst &amp; Zivilschutz, Gemeinde <span class="js-loc-municipality">Kiens</span>), Open-Meteo (Position <span class="js-loc-position">Zimat</span>) und Kachelmannwetter zu einem gemeinsamen Schnitt. Kachelmannwetter stellt keine offizielle API bereit – die Werte werden live von der Webseite über einen Lese-Proxy (r.jina.ai) extrahiert und können daher gelegentlich kurzfristig fehlen. Bergfex wurde entfernt, da die Seite automatisierte Anfragen aktiv blockiert (HTTP 429).</p>
       <p>Über den Ort-Umschalter oben im Kopfbereich lässt sich jede Fraktion bzw. jeder Ort Südtirols suchen; Position, Karte und (falls zuordenbar) die Landeswetterdienst-Gemeinde stellen sich dann automatisch um. Kachelmannwetter bleibt dabei technisch bedingt immer auf Kiens bezogen. Beim Neuladen der Seite gilt wieder <span class="js-loc-position">Zimat</span> als Standard.</p>
       <p>Die Live-Radar-Zeitleiste (bis 3h zurück) und die amtliche Niederschlagsvorhersage (bis ca. 24h voraus) stammen von den Rasterbildern der Provinz Südtirol mit exakter Georeferenzierung (EPSG:25832 → WGS84 via proj4js).</p>
-      <p>Das Windprofil-Icon auf der Karte zeigt Windgeschwindigkeit &amp; -richtung auf mehreren Höhenstufen (Open-Meteo-Druckflächendaten, 1000–500 hPa) – als kostenlose Alternative zu Meteoblues kostenpflichtigem "Thermal &amp; Aerological Package".</p>
+      <p>Das Windprofil (Details-Tab) zeigt Windgeschwindigkeit &amp; -richtung auf mehreren Höhenstufen (Open-Meteo-Druckflächendaten, 1000–500 hPa) – als kostenlose Alternative zu Meteoblues kostenpflichtigem "Thermal &amp; Aerological Package".</p>
       <p>Die Positionsanzeige (Karte, Open-Meteo) bezieht sich auf <span class="js-loc-position">Zimat</span>. Die amtlichen Landeswetterdienst-Daten liegen nur auf Gemeindeebene vor und gelten daher für <span class="js-loc-municipality">Kiens</span>.</p>
       <p class="about-card__meta">Letzte Aktualisierung: <span id="aboutUpdated">--</span></p>
     </div>
